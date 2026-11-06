@@ -3,12 +3,32 @@ import pool from "./db";
 import postRoutes from "./routes/postroute";
 import authRoutes from "./routes/authroutes";
 import "dotenv/config";
-
+import interactionRoutes from "./routes/interactionroutes";
+import notificationRoutes from "./routes/notificationroutes";
+import { createServer } from "http";
+import { Server } from "socket.io";
 const app = express();
 const PORT = 5000;
 
-app.use(express.json());
+const httpServer = createServer(app);
 
+const io = new Server(httpServer, {
+    cors: {
+        origin: "http://localhost:3000",
+        methods: ["GET", "POST"]
+    }
+});
+io.on("connection", (socket) => {
+    console.log("User connected:", socket.id);
+
+    socket.on("disconnect", () => {
+        console.log("User disconnected:", socket.id);
+    });
+});
+
+app.use(express.json());
+app.use(notificationRoutes);
+app.use(interactionRoutes);
 app.use(postRoutes);
 app.use(authRoutes);
 
@@ -21,9 +41,10 @@ pool.query("SELECT NOW()", (err, result) => {
     }
 });
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
 
 // import express from "express";
 // import pool from "./db";
